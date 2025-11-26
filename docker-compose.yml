@@ -1,0 +1,16 @@
+services:
+  data-server:
+    build: .
+    container_name: surf_data_server
+    restart: always
+    ports:
+      # Maps port 8000 on the SURF VM to port 8000 in the container
+      - "8000:8000"
+    volumes:
+      # Maps the local 'data' folder to '/data' inside the container
+      - ./data:/data
+    environment:
+      # CHANGE THIS to a long, random string
+      - API_KEY=StudentSecretKey2025!
+      # The name of the file inside your data folder
+      - DATA_FILE_NAME=my_huge_dataset.zip
