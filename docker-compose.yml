@@ -11,6 +11,6 @@ services:
       - ./data:/data
     environment:
       # CHANGE THIS to a long, random string
-      - API_KEY=StudentSecretKey2025!
+      - API_KEY=${API_KEY}
       # The name of the file inside your data folder
-      - DATA_FILE_NAME=my_huge_dataset.zip
+      - DATA_FILE_NAME=${DATA_FILE_NAME}

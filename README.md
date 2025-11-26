@@ -1,20 +1,64 @@
 # SURF Data Server Setup
 
-1. Preparation on the VM
+## 1. Preparation on the VM
+
 SSH into your SURF/Ubuntu VM and create the project folders:
 
+```bash
 mkdir -p ~/my-server/data
 cd ~/my-server
+```
 
-2. Generating a Secure API Key
+## 2. Local Setup
 
-Run:
-openssl rand -hex 32
+We use a `Makefile` to automate the setup.
 
-3. Transferring Data (SCP)
-Run scp <source_file> <remote_user>@<remote_ip>:<destination_path>
+### Generate API Key and Configuration
+Run the following command to generate an `.env` file with a secure `API_KEY` and the data filename:
 
-scp /path/to/your/local/dataset.zip ubuntu@<YOUR_VM_IP>:~/my-server/data/
+```bash
+make setup
+```
 
-then:
-curl -H "x-api-key: <API_KEY>" -O http://<VM_IP>:8000/download
+This will create an `.env` file. **Do not commit this file to git.**
+
+### Start the Server
+To build and start the server using Docker Compose:
+
+```bash
+make up
+```
+
+## 3. Prepare Data
+Before transferring, zip the data file:
+
+```bash
+make zip
+```
+
+## 4. Transferring Data
+
+You can transfer the data file (`data/ai_challenge.zip`) to your VM using the `make transfer` command.
+
+You need to provide your VM's IP address. You can do this in two ways:
+
+**Option A: Pass IP as an argument**
+```bash
+make transfer VM_IP=123.45.67.89
+```
+
+**Option B: Edit the Makefile**
+Open `Makefile` and set `VM_IP` to your VM's IP address. Then run:
+```bash
+make transfer
+```
+
+## 5. Download Data
+
+Once the server is running on the VM and the data is transferred, you can download the data using the API key.
+
+```bash
+curl -H "x-api-key: <YOUR_API_KEY>" -O http://<VM_IP>:8000/download
+```
+
+Replace `<YOUR_API_KEY>` with the key generated in your `.env` file (or the one on the server if you generated it there).
