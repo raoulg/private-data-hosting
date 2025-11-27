@@ -5,8 +5,8 @@ services:
     container_name: surf_data_server
     restart: unless-stopped
     ports:
-      # Maps port 8000 on the SURF VM to port 8000 in the container
-      - "8000:8000"
+      # Maps port 80 on the SURF VM to port 8000 in the container
+      - "80:8000"
     volumes:
       # Maps the local 'data' folder to '/data' inside the container
       - ./data:/data

@@ -16,7 +16,7 @@ help: ## Show this help message
 	@echo 'Targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-zip: ## Zip the data files
+zip: ## Zip the data files in the data/ folder
 	zip -j $(DATA_FILE) data/* -x "*.zip" -x "*.gitkeep"
 	@echo "Zipped data to $(DATA_FILE)"
 

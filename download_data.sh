@@ -53,7 +53,7 @@ echo "Downloading data..."
 # -J: Use the header-provided filename
 # -O: Write output to a file named as the remote file
 # -f: Fail silently (no output at all) on server errors
-curl -J -O -f -H "x-api-key: $api_key" "http://$server_ip:8000/download?user_email=$user_email"
+curl -J -O -f -H "x-api-key: $api_key" "http://$server_ip/download?user_email=$user_email"
 
 if [[ $? -eq 0 ]]; then
     echo "Download complete!"
