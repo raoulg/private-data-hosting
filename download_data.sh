@@ -71,10 +71,23 @@ cd "$OUTPUT_DIR" || exit
 # -J: Use the header-provided filename
 # -O: Write output to a file named as the remote file
 # -f: Fail silently (no output at all) on server errors
-curl -J -O -f -H "x-api-key: $api_key" "http://$server_ip/download?user_email=$user_email"
+# -w: Write the effective filename to stdout so we can capture it
+filename=$(curl -J -O -w "%{filename_effective}" -f -H "x-api-key: $api_key" "http://$server_ip/download?user_email=$user_email")
+curl_exit_code=$?
 
-if [[ $? -eq 0 ]]; then
-    echo "Download complete!"
+if [[ $curl_exit_code -eq 0 ]]; then
+    echo "Download complete! Saved to $filename"
+    
+    # Check if file is a zip and unzip it
+    if [[ "$filename" == *.zip ]]; then
+        echo "Unzipping $filename..."
+        if command -v unzip &> /dev/null; then
+            unzip -o "$filename"
+            echo "Unzip complete."
+        else
+            echo "Warning: 'unzip' command not found. Please unzip '$filename' manually."
+        fi
+    fi
 else
     echo "Download failed. Please check your API Key, Server IP, and try again."
 fi

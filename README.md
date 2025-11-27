@@ -65,8 +65,10 @@ make transfer
 To download the data, you can run the following command in your terminal:
  
  ```bash
- curl -sSL https://raw.githubusercontent.com/raoulg/private-data-hosting/refs/heads/main/download_data.sh | bash
+ curl -sSL https://raw.githubusercontent.com/raoulg/private-data-hosting/refs/heads/main/download_data.sh | bash -s -- -o data/raw
  ```
+ 
+ Note: The `-s --` part is required to pass arguments (like `-o data/raw`) to the script when piping from curl.
  
  You will be prompted for:
  1.  **Agreement**: Type `yes` to agree to the terms (use data only for hackathon, destroy afterwards).
