@@ -62,10 +62,10 @@ make transfer
 
 ## 5. Download Data
 
-To download the data, you can use the provided script `download_data.sh`. This script will ask for your agreement to the terms, your email, and the API key.
+To download the data, you can run the following command in your terminal:
  
  ```bash
- ./download_data.sh
+ curl -sSL https://raw.githubusercontent.com/raoulg/private-data-hosting/refs/heads/main/download_data.sh | bash
  ```
  
  You will be prompted for:
