@@ -6,7 +6,8 @@ WORKDIR /app
 # Install dependencies using uv
 # --system: Install packages into the system python environment (acceptable in containers)
 # --no-cache: Skip caching to keep the image layer small
-RUN uv pip install --system --no-cache fastapi uvicorn
+COPY pyproject.toml README.md /app/
+RUN uv pip install --system --no-cache .
 
 # Copy the application code
 COPY app /app/
