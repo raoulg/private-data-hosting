@@ -8,7 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
-data/*.jsonl
-data/*.zip
+data/*
+!data/.gitkeep
 .DS_Store
 .env
+logs/
