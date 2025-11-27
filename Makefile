@@ -19,7 +19,7 @@ setup:
 	@echo ".env file created with secure API_KEY and DATA_FILE_NAME."
 
 up:
-	docker-compose up --build
+	docker-compose up --build -d
 
 transfer:
 	@if [ "$(VM_IP)" = "<YOUR_VM_IP>" ]; then \
