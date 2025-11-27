@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Default output directory
+OUTPUT_DIR="."
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -o|--output) OUTPUT_DIR="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 # Terms of Service
 echo "=================================================================="
 echo "SURF Data Download - Terms of Service"
@@ -47,7 +59,13 @@ read -p "Enter the Server IP (press Enter for localhost): " server_ip < /dev/tty
 server_ip=${server_ip:-127.0.0.1}
 
 echo ""
-echo "Downloading data..."
+echo "Downloading data to $OUTPUT_DIR..."
+
+# Create output directory if it doesn't exist
+mkdir -p "$OUTPUT_DIR"
+
+# Change to output directory
+cd "$OUTPUT_DIR" || exit
 
 # Run curl
 # -J: Use the header-provided filename
