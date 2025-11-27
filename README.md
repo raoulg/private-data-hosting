@@ -55,10 +55,14 @@ make transfer
 
 ## 5. Download Data
 
-Once the server is running on the VM and the data is transferred, you can download the data using the API key.
-
-```bash
-curl -H "x-api-key: <YOUR_API_KEY>" -O "http://<VM_IP>:8000/download?user_email=<YOUR_EMAIL>"
-```
-
-Replace `<YOUR_API_KEY>` with the key generated in your `.env` file, and `<YOUR_EMAIL>` with your email address for logging purposes.
+To download the data, you can use the provided script `download_data.sh`. This script will ask for your agreement to the terms, your email, and the API key.
+ 
+ ```bash
+ ./download_data.sh
+ ```
+ 
+ You will be prompted for:
+ 1.  **Agreement**: Type `yes` to agree to the terms (use data only for hackathon, destroy afterwards).
+ 2.  **Email**: Your email address.
+ 3.  **API Key**: The key provided to you.
+ 4.  **Server IP**: The IP address of the server (press Enter for localhost).
