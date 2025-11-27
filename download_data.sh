@@ -11,7 +11,7 @@ echo "=================================================================="
 echo ""
 
 # Ask for agreement
-read -p "Do you agree to these terms? (yes/no): " agreement
+read -p "Do you agree to these terms? (yes/no): " agreement < /dev/tty
 
 if [[ "$agreement" != "yes" ]]; then
     echo "You must agree to the terms to download the data. Exiting."
@@ -19,7 +19,7 @@ if [[ "$agreement" != "yes" ]]; then
 fi
 
 # Ask for user email
-read -p "Enter your email address: " user_email
+read -p "Enter your email address: " user_email < /dev/tty
 
 if [[ -z "$user_email" ]]; then
     echo "Email address is required. Exiting."
@@ -27,7 +27,7 @@ if [[ -z "$user_email" ]]; then
 fi
 
 # Ask for API Key
-read -p "Enter the API Key: " api_key
+read -p "Enter the API Key: " api_key < /dev/tty
 
 if [[ -z "$api_key" ]]; then
     echo "API Key is required. Exiting."
@@ -43,7 +43,7 @@ fi
 # The curl command in the README has <VM_IP>.
 # Let's ask for the IP address as well, to make it fully interactive.
 
-read -p "Enter the Server IP (press Enter for localhost): " server_ip
+read -p "Enter the Server IP (press Enter for localhost): " server_ip < /dev/tty
 server_ip=${server_ip:-127.0.0.1}
 
 echo ""
