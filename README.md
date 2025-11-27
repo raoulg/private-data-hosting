@@ -2,25 +2,25 @@
 
 ## 1. Preparation on the VM
 
-SSH into your SURF/Ubuntu VM and create the project folders:
+SSH into your VM and create the project folders:
 
 ```bash
 mkdir -p ~/my-server/data
 cd ~/my-server
 ```
 
-## 2. Local Setup
+## 2. Setup
 
 We use a `Makefile` to automate the setup.
 
 ### Generate API Key and Configuration
-Run the following command to generate an `.env` file with a secure `API_KEY` and the data filename:
+Run the following command on the VM to generate an `.env` file with a secure `API_KEY` and the data filename:
 
 ```bash
 make setup
 ```
 
-This will create an `.env` file. **Do not commit this file to git.**
+This will create an `.env` file.
 
 ### Start the Server
 To build and start the server using Docker Compose:
@@ -58,7 +58,7 @@ make transfer
 Once the server is running on the VM and the data is transferred, you can download the data using the API key.
 
 ```bash
-curl -H "x-api-key: <YOUR_API_KEY>" -O http://<VM_IP>:8000/download
+curl -H "x-api-key: <YOUR_API_KEY>" -O "http://<VM_IP>:8000/download?user_email=<YOUR_EMAIL>"
 ```
 
-Replace `<YOUR_API_KEY>` with the key generated in your `.env` file (or the one on the server if you generated it there).
+Replace `<YOUR_API_KEY>` with the key generated in your `.env` file, and `<YOUR_EMAIL>` with your email address for logging purposes.
