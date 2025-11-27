@@ -8,6 +8,13 @@ SSH into your VM and create the project folders:
 mkdir -p ~/my-server/data
 cd ~/my-server
 ```
+ 
+ ### Install Docker
+ If Docker is not already installed on your VM, run the following command:
+ 
+ ```bash
+ curl -sSL https://raw.githubusercontent.com/raoulg/serverinstall/refs/heads/master/install-docker.sh | bash
+ ```
 
 ## 2. Setup
 
