@@ -9,7 +9,7 @@ REMOTE_PATH ?= ~/my-server/data/
 .PHONY: setup up transfer zip
 
 zip:
-	zip -j $(DATA_FILE) data/ai_challenge.jsonl
+	zip -j $(DATA_FILE) data/aktes.jsonl data/README.md data/rechtsfeiten.csv
 	@echo "Zipped data to $(DATA_FILE)"
 
 setup:
