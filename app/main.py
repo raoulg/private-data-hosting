@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 app = FastAPI()
@@ -18,18 +19,26 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
 logger.add("logs/access.log", rotation="10 MB")
 
 
-async def verify_api_key(x_api_key: str = Header(...)):
+async def verify_api_key(x_api_key: str = Header(None), api_key: str = Query(None)):
     """
-    Dependency that retrieves the 'x-api-key' header and validates it.
+    Dependency that retrieves the API key from 'x-api-key' header OR 'api_key' query param.
     """
-    if x_api_key != API_KEY:
+    key = x_api_key or api_key
+    if key != API_KEY:
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    return x_api_key
+    return key
+
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 @app.get("/")
-def health_check():
-    return {"status": "online", "message": "Data server is running"}
+def read_root():
+    """
+    Serve the frontend GUI.
+    """
+    return FileResponse("static/index.html")
 
 
 @app.get("/download")
