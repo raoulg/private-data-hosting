@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Query
+import aiofiles
+from fastapi import (Depends, FastAPI, File, Header, HTTPException, Query,
+                     UploadFile)
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
@@ -13,6 +15,7 @@ app = FastAPI()
 # This will raise a KeyError if the variables are not set, causing the app to crash at startup (fail-fast)
 API_KEY = os.environ["API_KEY"]
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
+ALLOW_UPLOAD = os.environ.get("ALLOW_UPLOAD", "false").lower() == "true"
 
 # Configure logger
 # Rotation: 10 MB
@@ -39,6 +42,14 @@ def read_root():
     Serve the frontend GUI.
     """
     return FileResponse("static/index.html")
+
+
+@app.get("/config")
+def get_config(api_key: str = Depends(verify_api_key)):
+    """
+    Return server configuration.
+    """
+    return {"allow_upload": ALLOW_UPLOAD}
 
 
 @app.get("/download")
@@ -82,3 +93,34 @@ def list_files(
             if file_path.is_file():
                 files.append({"name": file_path.name, "size": file_path.stat().st_size})
     return {"files": files}
+
+
+@app.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Upload a file to the server.
+    """
+    if not ALLOW_UPLOAD:
+        raise HTTPException(
+            status_code=403, detail="File upload is disabled on this server."
+        )
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+
+    file_path = DATA_DIR / file.filename
+    logger.info(f"Upload started: {file.filename}")
+
+    try:
+        async with aiofiles.open(file_path, "wb") as out_file:
+            while content := await file.read(1024 * 1024):  # Read in 1MB chunks
+                await out_file.write(content)
+    except Exception as e:
+        logger.error(f"Upload failed for {file.filename}: {e}")
+        raise HTTPException(status_code=500, detail="File upload failed")
+
+    logger.info(f"Upload completed: {file.filename}")
+    return {"filename": file.filename, "message": "File uploaded successfully"}

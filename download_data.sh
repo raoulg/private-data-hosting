@@ -125,7 +125,7 @@ echo -e "${YELLOW}Phase 3: File Selection${NC}"
 echo "Fetching file list from server..."
 
 # Fetch file list
-RESPONSE=$(curl -s -f -H "x-api-key: $API_KEY" "http://$SERVER_IP/list_files")
+RESPONSE=$(curl -s -f -H "x-api-key: $API_KEY" "http://$SERVER_IP/list_files?user_email=$USER_EMAIL")
 CURL_EXIT_CODE=$?
 
 if [[ $CURL_EXIT_CODE -ne 0 ]]; then

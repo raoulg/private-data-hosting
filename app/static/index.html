@@ -121,6 +121,41 @@
             margin-top: 1rem;
             display: none;
         }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-weight: 500;
+            width: auto;
+        }
+
+        .tab-btn.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .tab-btn:hover {
+            background-color: #f9f9f9;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 
@@ -150,14 +185,36 @@
             <div id="loginError" class="error"></div>
         </div>
 
-        <div id="fileList">
-            <h3>Available Files</h3>
-            <div id="filesContainer"></div>
+        <div id="mainInterface" style="display:none;">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('browse')">Browse Files</button>
+                <button class="tab-btn" id="uploadTabBtn" onclick="switchTab('upload')" style="display:none;">Upload
+                    Files</button>
+            </div>
+
+            <div id="browseTab" class="tab-content active">
+                <h3>Available Files</h3>
+                <div id="filesContainer"></div>
+            </div>
+
+            <div id="uploadTab" class="tab-content">
+                <h3>Upload File</h3>
+                <div class="form-group">
+                    <label for="fileInput">Select File</label>
+                    <input type="file" id="fileInput">
+                </div>
+                <button id="uploadBtn" onclick="uploadFile()">Upload</button>
+                <div id="uploadStatus" style="margin-top: 1rem; text-align: center;"></div>
+            </div>
+
             <button onclick="logout()" style="margin-top: 1.5rem; background-color: #95a5a6;">Logout</button>
         </div>
     </div>
 
     <script>
+        let currentApiKey = '';
+        let currentEmail = '';
+
         async function login() {
             const email = document.getElementById('email').value;
             const apiKey = document.getElementById('apiKey').value;
@@ -179,21 +236,33 @@
             loginBtn.textContent = 'Loading...';
 
             try {
+                // Check config first
+                const configResponse = await fetch('/config', { headers: { 'x-api-key': apiKey } });
+                if (!configResponse.ok) throw new Error('Invalid API Key');
+                const config = await configResponse.json();
+
+                // Fetch files
                 const response = await fetch(`/list_files?user_email=${encodeURIComponent(email)}`, {
-                    headers: {
-                        'x-api-key': apiKey
-                    }
+                    headers: { 'x-api-key': apiKey }
                 });
 
                 if (!response.ok) {
-                    throw new Error('Invalid API Key or Server Error');
+                    throw new Error('Server Error');
                 }
 
                 const data = await response.json();
-                showFiles(data.files, email, apiKey);
+
+                currentApiKey = apiKey;
+                currentEmail = email;
+
+                // Setup UI
+                if (config.allow_upload) {
+                    document.getElementById('uploadTabBtn').style.display = 'inline-block';
+                }
+                showFiles(data.files);
 
                 document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('fileList').style.display = 'block';
+                document.getElementById('mainInterface').style.display = 'block';
             } catch (err) {
                 showError(err.message);
             } finally {
@@ -202,7 +271,76 @@
             }
         }
 
-        function showFiles(files, email, apiKey) {
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            if (tabName === 'browse') {
+                document.getElementById('browseTab').classList.add('active');
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                refreshFiles();
+            } else {
+                document.getElementById('uploadTab').classList.add('active');
+                document.getElementById('uploadTabBtn').classList.add('active');
+            }
+        }
+
+        async function refreshFiles() {
+            try {
+                const response = await fetch(`/list_files?user_email=${encodeURIComponent(currentEmail)}`, {
+                    headers: { 'x-api-key': currentApiKey }
+                });
+                const data = await response.json();
+                showFiles(data.files);
+            } catch (e) {
+                console.error("Failed to refresh files", e);
+            }
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const statusDiv = document.getElementById('uploadStatus');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (!file) {
+                statusDiv.textContent = "Please select a file.";
+                statusDiv.style.color = "red";
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            statusDiv.textContent = '';
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: { 'x-api-key': currentApiKey },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Upload failed');
+                }
+
+                statusDiv.textContent = "Upload successful!";
+                statusDiv.style.color = "green";
+                fileInput.value = ''; // Clear input
+            } catch (err) {
+                statusDiv.textContent = "Error: " + err.message;
+                statusDiv.style.color = "red";
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload';
+            }
+        }
+
+        function showFiles(files) {
             const container = document.getElementById('filesContainer');
             container.innerHTML = '';
 
@@ -216,7 +354,7 @@
                 div.className = 'file-item';
 
                 const size = formatSize(file.size);
-                const downloadUrl = `/download?filename=${encodeURIComponent(file.name)}&user_email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`;
+                const downloadUrl = `/download?filename=${encodeURIComponent(file.name)}&user_email=${encodeURIComponent(currentEmail)}&api_key=${encodeURIComponent(currentApiKey)}`;
 
                 div.innerHTML = `
                     <div>
@@ -245,9 +383,11 @@
 
         function logout() {
             document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('fileList').style.display = 'none';
+            document.getElementById('mainInterface').style.display = 'none';
             document.getElementById('apiKey').value = '';
             document.getElementById('tos').checked = false;
+            currentApiKey = '';
+            currentEmail = '';
         }
     </script>
 </body>

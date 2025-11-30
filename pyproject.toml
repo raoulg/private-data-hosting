@@ -9,6 +9,7 @@ dependencies = [
     "uvicorn>=0.38.0",
     "loguru>=0.7.2",
     "aiofiles>=24.1.0",
+    "python-multipart>=0.0.9",
 ]
 
 [dependency-groups]
@@ -16,4 +17,5 @@ dev = [
     "isort>=7.0.0",
     "mypy>=1.18.2",
     "ruff>=0.14.6",
+    "types-aiofiles>=25.1.0.20251011",
 ]

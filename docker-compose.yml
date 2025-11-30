@@ -16,3 +16,5 @@ services:
       - API_KEY=${API_KEY}
       # The directory where data is stored inside the container
       - DATA_DIR=/data
+      # Set to "true" to enable file uploads via the Web GUI
+      - ALLOW_UPLOAD=${ALLOW_UPLOAD:-false}
