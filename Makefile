@@ -17,8 +17,15 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 zip: ## Zip the data files in the data/ folder
-	zip -j $(DATA_FILE) data/* -x "*.zip" -x "*.gitkeep"
-	@echo "Zipped data to $(DATA_FILE)"
+	@read -p "Zipping to $(DATA_FILE). Is this correct? (y/n): " confirm; \
+	if [ "$$confirm" != "y" ]; then \
+		read -p "Enter output filename: " new_file; \
+		zip -j $$new_file data/* -x "*.zip" -x "*.gitkeep"; \
+		echo "Zipped data to $$new_file"; \
+	else \
+		zip -j $(DATA_FILE) data/* -x "*.zip" -x "*.gitkeep"; \
+		echo "Zipped data to $(DATA_FILE)"; \
+	fi
 
 setup: ## Interactive setup to generate .env file
 	@echo "Setting up configuration..."
@@ -37,7 +44,6 @@ setup: ## Interactive setup to generate .env file
 	echo "VM_USER=$$vm_user" > .env; \
 	echo "VM_IP=$$vm_ip" >> .env; \
 	echo "API_KEY=$$api_key" >> .env; \
-	echo "DATA_FILE_NAME=ai_challenge.zip" >> .env; \
 	echo ".env file created successfully."
 
 up: ## Start the server with Docker Compose
@@ -48,4 +54,16 @@ transfer: ## Transfer data to the VM
 		echo "Error: VM_IP is not set. Please run 'make setup' or set it in .env"; \
 		exit 1; \
 	fi
-	scp $(DATA_FILE) $(VM_USER)@$(VM_IP):$(REMOTE_PATH)
+	@if [ -f "$(DATA_FILE)" ]; then \
+		read -p "Found $(DATA_FILE). Is this what you want to transfer? (y/n): " confirm; \
+		if [ "$$confirm" != "y" ]; then \
+			read -p "Enter filename to transfer: " new_file; \
+			scp $$new_file $(VM_USER)@$(VM_IP):$(REMOTE_PATH); \
+		else \
+			scp $(DATA_FILE) $(VM_USER)@$(VM_IP):$(REMOTE_PATH); \
+		fi \
+	else \
+		echo "File $(DATA_FILE) not found."; \
+		read -p "Enter filename to transfer: " new_file; \
+		scp $$new_file $(VM_USER)@$(VM_IP):$(REMOTE_PATH); \
+	fi

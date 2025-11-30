@@ -14,5 +14,5 @@ services:
     environment:
       # CHANGE THIS to a long, random string
       - API_KEY=${API_KEY}
-      # The name of the file inside your data folder
-      - DATA_FILE_NAME=${DATA_FILE_NAME}
+      # The directory where data is stored inside the container
+      - DATA_DIR=/data
