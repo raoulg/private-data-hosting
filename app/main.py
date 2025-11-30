@@ -91,6 +91,8 @@ def list_files(
     if DATA_DIR.exists():
         for file_path in DATA_DIR.iterdir():
             if file_path.is_file():
+                if file_path.name == ".gitkeep":
+                    continue
                 files.append({"name": file_path.name, "size": file_path.stat().st_size})
     return {"files": files}
 

@@ -156,6 +156,27 @@
         .tab-content.active {
             display: block;
         }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 20px;
+            background-color: #2ecc71;
+            border-radius: 4px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 0.8rem;
+            transition: width 0.2s;
+        }
     </style>
 </head>
 
@@ -204,6 +225,9 @@
                     <input type="file" id="fileInput">
                 </div>
                 <button id="uploadBtn" onclick="uploadFile()">Upload</button>
+                <div id="progressContainer" class="progress-container">
+                    <div id="progressBar" class="progress-bar">0%</div>
+                </div>
                 <div id="uploadStatus" style="margin-top: 1rem; text-align: center;"></div>
             </div>
 
@@ -302,6 +326,8 @@
             const file = fileInput.files[0];
             const statusDiv = document.getElementById('uploadStatus');
             const uploadBtn = document.getElementById('uploadBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
 
             if (!file) {
                 statusDiv.textContent = "Please select a file.";
@@ -315,29 +341,48 @@
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
             statusDiv.textContent = '';
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
 
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    headers: { 'x-api-key': currentApiKey },
-                    body: formData
-                });
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+            xhr.setRequestHeader('x-api-key', currentApiKey);
 
-                if (!response.ok) {
-                    const err = await response.json();
-                    throw new Error(err.detail || 'Upload failed');
+            xhr.upload.onprogress = function (e) {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = percentComplete + '%';
+                    progressBar.textContent = percentComplete + '%';
                 }
+            };
 
-                statusDiv.textContent = "Upload successful!";
-                statusDiv.style.color = "green";
-                fileInput.value = ''; // Clear input
-            } catch (err) {
-                statusDiv.textContent = "Error: " + err.message;
-                statusDiv.style.color = "red";
-            } finally {
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    statusDiv.textContent = "Upload successful!";
+                    statusDiv.style.color = "green";
+                    fileInput.value = ''; // Clear input
+                } else {
+                    let errorMessage = 'Upload failed';
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        errorMessage = response.detail || errorMessage;
+                    } catch (e) { }
+                    statusDiv.textContent = "Error: " + errorMessage;
+                    statusDiv.style.color = "red";
+                }
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload';
-            }
+            };
+
+            xhr.onerror = function () {
+                statusDiv.textContent = "Error: Network error";
+                statusDiv.style.color = "red";
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload';
+            };
+
+            xhr.send(formData);
         }
 
         function showFiles(files) {
