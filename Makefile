@@ -111,7 +111,7 @@ up: ## Start the server with Docker Compose
 
 transfer: ## [Uploader] Transfer data from local machine to the VM
 	@if [ -z "$(PRIVATE_DOWNLOAD_IP)" ]; then \
-		echo "Error: PRIVATE_DOWNLOAD_IP is not set. Please run 'make setup-uploader' or set it in .env"; \
+		echo "Error: PRIVATE_DOWNLOAD_IP is not set. Please run 'make setup-uploader' or set manually in .env"; \
 		exit 1; \
 	fi
 	@vm_user="$(VM_USER)"; \
