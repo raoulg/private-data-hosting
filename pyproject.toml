@@ -8,6 +8,7 @@ dependencies = [
     "fastapi>=0.122.0",
     "uvicorn>=0.38.0",
     "loguru>=0.7.2",
+    "aiofiles>=24.1.0",
 ]
 
 [dependency-groups]

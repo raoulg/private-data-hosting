@@ -8,8 +8,13 @@ CYAN='\033[0;36m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Load .env file if it exists
+if [[ -f .env ]]; then
+    export $(grep -v '^#' .env | xargs)
+fi
+
 # Default output directory
-OUTPUT_DIR="."
+OUTPUT_DIR="${PRIVATE_TARGET_DIR:-.}"
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -21,35 +26,22 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Load .env file if it exists
-if [[ -f .env ]]; then
-    export $(grep -v '^#' .env | xargs)
-fi
 
-# Check for Python
-if command -v python3 &> /dev/null; then
-    PYTHON_CMD="python3"
-elif command -v python &> /dev/null; then
-    PYTHON_CMD="python"
-else
-    echo -e "${RED}Python is required to run this script but was not found.${NC}"
-    echo "We recommend installing 'uv' to manage Python easily:"
-    echo -e "${CYAN}curl -LsSf https://astral.sh/uv/install.sh | sh${NC}"
-    echo "After installing uv, you can install python with: uv python install"
-    exit 1
-fi
+
+
 
 # Header
 print_header() {
     clear
     echo -e "${CYAN}"
-    echo "  ____  _       _          _    _           _   _             "
-    echo " |  _ \(_)     | |        | |  | |         | | (_)            "
-    echo " | |_) |_  __ _| |  ______| |__| | ___  ___| |_ _ _ __   __ _ "
-    echo " |  _ <| |/ _\` | | |______|  __  |/ _ \/ __| __| | '_ \ / _\` |"
-    echo " | |_) | | (_| | |        | |  | | (_) \__ \ |_| | | | | (_| |"
-    echo " |____/|_|\__, |_|        |_|  |_|\___/|___/\__|_|_| |_|\__, |"
-    echo "           __/ |                                         __/ |"
-    echo "          |___/                                         |___/ "
+    echo "             _            _             _       _          _               _   _             "
+    echo "            (_)          | |           | |     | |        | |             | | (_)            "
+    echo "  _ __  _ __ ___   ____ _| |_ ___    __| | __ _| |_ __ _  | |__   ___  ___| |_ _ _ __   __ _ "
+    echo " | '_ \| '__| \ \ / / _\` | __/ _ \  / _\` |/ _\` | __/ _\` | | '_ \ / _ \/ __| __| | '_ \ / _\` |"
+    echo " | |_) | |  | |\ V / (_| | ||  __/ | (_| | (_| | || (_| | | | | | (_) \__ \ |_| | | | | (_| |"
+    echo " | .__/|_|  |_| \_/ \__,_|\__\___|  \__,_|\__,_|\__\__,_| |_| |_|\___/|___/\__|_|_| |_|\__, |"
+    echo " | |                                                                                    __/ |"
+    echo " |_|                                                                                   |___/ "
     echo -e "${NC}"
     echo -e "${BLUE}Welcome to the Private Data Hosting Downloader${NC}"
     echo "=================================================================="
@@ -141,11 +133,12 @@ if [[ $CURL_EXIT_CODE -ne 0 ]]; then
     exit 1
 fi
 
-# Parse JSON using Python (standard on most systems)
+# Parse JSON using grep/sed/awk (removes Python dependency)
 # We expect {"files": [{"name": "file1", "size": 123}, ...]}
-FILES_JSON=$(echo "$RESPONSE" | $PYTHON_CMD -c "import sys, json; print(json.dumps(json.load(sys.stdin)['files']))" 2>/dev/null)
+# Extract lines like: "name": "file1", "size": 123
+FILES_LIST=$(echo "$RESPONSE" | grep -o '"name": "[^"]*", "size": [0-9]*')
 
-if [[ -z "$FILES_JSON" || "$FILES_JSON" == "[]" ]]; then
+if [[ -z "$FILES_LIST" ]]; then
     echo -e "${RED}No files found or invalid response from server.${NC}"
     echo "Response: $RESPONSE"
     exit 1
@@ -159,8 +152,9 @@ declare -a FILE_SIZES
 
 # Read files into arrays using a loop
 while IFS= read -r line; do
-    name=$(echo "$line" | $PYTHON_CMD -c "import sys, json; print(json.load(sys.stdin)['name'])")
-    size=$(echo "$line" | $PYTHON_CMD -c "import sys, json; print(json.load(sys.stdin)['size'])")
+    # Extract name and size
+    name=$(echo "$line" | sed -n 's/.*"name": "\([^"]*\)".*/\1/p')
+    size=$(echo "$line" | sed -n 's/.*"size": \([0-9]*\).*/\1/p')
     
     # Format size
     if (( size > 1024 * 1024 )); then
@@ -174,7 +168,7 @@ while IFS= read -r line; do
     echo -e "  [$i] ${CYAN}$name${NC} ($size_str)"
     FILE_NAMES[$i]="$name"
     ((i++))
-done < <(echo "$FILES_JSON" | $PYTHON_CMD -c "import sys, json; [print(json.dumps(x)) for x in json.load(sys.stdin)]")
+done <<< "$FILES_LIST"
 
 TOTAL_FILES=$((i-1))
 
