@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,28 +16,34 @@
             min-height: 100vh;
             margin: 0;
         }
+
         .container {
             background: white;
             padding: 2rem;
             border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 500px;
         }
+
         h1 {
             color: #2c3e50;
             text-align: center;
             margin-bottom: 1.5rem;
         }
+
         .form-group {
             margin-bottom: 1rem;
         }
+
         label {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
         }
-        input[type="text"], input[type="email"] {
+
+        input[type="text"],
+        input[type="email"] {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ddd;
@@ -44,6 +51,7 @@
             box-sizing: border-box;
             font-size: 1rem;
         }
+
         .checkbox-group {
             display: flex;
             align-items: flex-start;
@@ -52,6 +60,7 @@
             font-size: 0.9rem;
             color: #555;
         }
+
         button {
             width: 100%;
             padding: 0.75rem;
@@ -63,19 +72,23 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
+
         button:hover {
             background-color: #2980b9;
         }
+
         button:disabled {
             background-color: #bdc3c7;
             cursor: not-allowed;
         }
+
         #fileList {
             margin-top: 2rem;
             border-top: 1px solid #eee;
             padding-top: 1rem;
             display: none;
         }
+
         .file-item {
             display: flex;
             justify-content: space-between;
@@ -83,9 +96,11 @@
             padding: 0.75rem;
             border-bottom: 1px solid #f0f0f0;
         }
+
         .file-item:last-child {
             border-bottom: none;
         }
+
         .download-btn {
             background-color: #2ecc71;
             padding: 0.5rem 1rem;
@@ -95,9 +110,11 @@
             font-size: 0.9rem;
             width: auto;
         }
+
         .download-btn:hover {
             background-color: #27ae60;
         }
+
         .error {
             color: #e74c3c;
             text-align: center;
@@ -106,10 +123,11 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Private Data Hosting</h1>
-        
+
         <div id="loginForm">
             <div class="form-group">
                 <label for="email">Email Address</label>
@@ -119,14 +137,15 @@
                 <label for="apiKey">API Key</label>
                 <input type="text" id="apiKey" placeholder="Enter your API Key" required>
             </div>
-            
+
             <div class="checkbox-group">
                 <input type="checkbox" id="tos" required>
                 <label for="tos">
-                    I agree to the Terms of Service. I will use this data only for the hackathon/project and destroy it afterwards.
+                    I agree to the Terms of Service. I will use this data only for the hackathon/project and destroy it
+                    afterwards.
                 </label>
             </div>
-            
+
             <button id="loginBtn" onclick="login()">Access Files</button>
             <div id="loginError" class="error"></div>
         </div>
@@ -160,7 +179,7 @@
             loginBtn.textContent = 'Loading...';
 
             try {
-                const response = await fetch('/list_files', {
+                const response = await fetch(`/list_files?user_email=${encodeURIComponent(email)}`, {
                     headers: {
                         'x-api-key': apiKey
                     }
@@ -172,7 +191,7 @@
 
                 const data = await response.json();
                 showFiles(data.files, email, apiKey);
-                
+
                 document.getElementById('loginForm').style.display = 'none';
                 document.getElementById('fileList').style.display = 'block';
             } catch (err) {
@@ -195,7 +214,7 @@
             files.forEach(file => {
                 const div = document.createElement('div');
                 div.className = 'file-item';
-                
+
                 const size = formatSize(file.size);
                 const downloadUrl = `/download?filename=${encodeURIComponent(file.name)}&user_email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`;
 
@@ -232,4 +251,5 @@
         }
     </script>
 </body>
+
 </html>

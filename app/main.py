@@ -65,10 +65,17 @@ def download_dataset(
 
 
 @app.get("/list_files")
-def list_files(api_key: str = Depends(verify_api_key)):
+def list_files(
+    api_key: str = Depends(verify_api_key),
+    user_email: str = Query(
+        ..., description="Email of the user accessing the file list"
+    ),
+):
     """
     List all files in the data directory with their sizes.
+    Logs the access request as a TOS agreement.
     """
+    logger.info(f"User {user_email} agreed to TOS and accessed file list.")
     files = []
     if DATA_DIR.exists():
         for file_path in DATA_DIR.iterdir():
