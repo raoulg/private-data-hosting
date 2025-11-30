@@ -13,3 +13,4 @@ data/*
 .DS_Store
 .env
 logs/
+.agreed_to_tos

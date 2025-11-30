@@ -7,7 +7,7 @@ This section is for the person setting up the VM.
 SSH into the VM you want to use for private data hosting.
 
 **Multi-uploader Setup (Optional)**:
-If multiple users need to transfer files to the server, you can set up a shared directory with group permissions. See [GROUP_SETUP.md](GROUP_SETUP.md) for detailed instructions.
+If multiple users need to transfer files to the server, you can set up a shared directory with group permissions. See [GROUP_SETUP.md](docs/GROUP_SETUP.md) for detailed instructions.
 
 ### 1.2 Installation
 1.  **Clone the Repository**:
@@ -36,7 +36,7 @@ If multiple users need to transfer files to the server, you can set up a shared 
 ## 2. [UPLOADER] Sending Data
 This section is for anyone who needs to upload files to the server.
 
-> **Windows Users**: If you don't have `make`, see [WINDOWS_UPLOADER.md](WINDOWS_UPLOADER.md).
+> **Windows Users**: If you don't have `make`, see [WINDOWS_UPLOADER.md](docs/WINDOWS_UPLOADER.md).
 
 1.  **Local Setup**:
     ```bash
