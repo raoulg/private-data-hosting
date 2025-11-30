@@ -84,7 +84,17 @@ setup-server: ## [Server Admin] Interactive setup to generate .env file on serve
 	else \
 		sed -i "s/^API_KEY=.*/API_KEY=$$api_key/" .env; \
 	fi
-	@echo ".env file created successfully. API_KEY set."
+	@echo "Detecting Public IP..."
+	@public_ip=$$(curl -s ifconfig.me); \
+	echo "Detected IP: $$public_ip"; \
+	if [[ "$$OSTYPE" == "darwin"* ]]; then \
+		sed -i '' "s/^PRIVATE_DOWNLOAD_IP=.*/PRIVATE_DOWNLOAD_IP=$$public_ip/" .env; \
+	else \
+		sed -i "s/^PRIVATE_DOWNLOAD_IP=.*/PRIVATE_DOWNLOAD_IP=$$public_ip/" .env; \
+	fi
+	@echo ".env file created successfully."
+	@echo "API_KEY set."
+	@echo "PRIVATE_DOWNLOAD_IP set to $$public_ip"
 
 setup-uploader: ## [Uploader] Interactive setup for local .env
 	@echo "Setting up uploader configuration..."

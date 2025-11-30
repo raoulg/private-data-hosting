@@ -1,12 +1,16 @@
 import os
+import tempfile
+import zipfile
 from pathlib import Path
+from typing import List
 
 import aiofiles
-from fastapi import (Depends, FastAPI, File, Header, HTTPException, Query,
-                     UploadFile)
+from fastapi import (BackgroundTasks, Depends, FastAPI, File, Header,
+                     HTTPException, Query, UploadFile)
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -20,6 +24,10 @@ ALLOW_UPLOAD = os.environ.get("ALLOW_UPLOAD", "false").lower() == "true"
 # Configure logger
 # Rotation: 10 MB
 logger.add("logs/access.log", rotation="10 MB")
+
+
+class DownloadRequest(BaseModel):
+    filenames: List[str]
 
 
 async def verify_api_key(x_api_key: str = Header(None), api_key: str = Query(None)):
@@ -99,30 +107,81 @@ def list_files(
 
 @app.post("/upload")
 async def upload_file(
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     api_key: str = Depends(verify_api_key),
 ):
     """
-    Upload a file to the server.
+    Upload multiple files to the server.
     """
     if not ALLOW_UPLOAD:
         raise HTTPException(
             status_code=403, detail="File upload is disabled on this server."
         )
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No filename provided")
+    uploaded_files = []
+    failed_files = []
 
-    file_path = DATA_DIR / file.filename
-    logger.info(f"Upload started: {file.filename}")
+    for file in files:
+        if not file.filename:
+            continue
+
+        file_path = DATA_DIR / file.filename
+        logger.info(f"Upload started: {file.filename}")
+
+        try:
+            async with aiofiles.open(file_path, "wb") as out_file:
+                while content := await file.read(1024 * 1024):  # Read in 1MB chunks
+                    await out_file.write(content)
+            uploaded_files.append(file.filename)
+            logger.info(f"Upload completed: {file.filename}")
+        except Exception as e:
+            logger.error(f"Upload failed for {file.filename}: {e}")
+            failed_files.append(file.filename)
+
+    if failed_files:
+        return {
+            "message": "Some files failed to upload",
+            "uploaded": uploaded_files,
+            "failed": failed_files,
+        }
+
+    return {"message": "All files uploaded successfully", "uploaded": uploaded_files}
+
+
+@app.post("/download_zip")
+def download_zip(
+    request: DownloadRequest,
+    background_tasks: BackgroundTasks,
+    api_key: str = Depends(verify_api_key),
+):
+    """
+    Create a zip archive of the requested files and return it.
+    """
+    if not request.filenames:
+        raise HTTPException(status_code=400, detail="No filenames provided")
+
+    # Create a temporary file for the zip
+    temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+    temp_zip.close()
+    temp_zip_path = Path(temp_zip.name)
 
     try:
-        async with aiofiles.open(file_path, "wb") as out_file:
-            while content := await file.read(1024 * 1024):  # Read in 1MB chunks
-                await out_file.write(content)
+        with zipfile.ZipFile(temp_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+            for filename in request.filenames:
+                file_path = DATA_DIR / filename
+                if file_path.exists() and file_path.is_file():
+                    zipf.write(file_path, arcname=filename)
+                else:
+                    logger.warning(f"File not found for zipping: {filename}")
     except Exception as e:
-        logger.error(f"Upload failed for {file.filename}: {e}")
-        raise HTTPException(status_code=500, detail="File upload failed")
+        logger.error(f"Failed to create zip: {e}")
+        if temp_zip_path.exists():
+            os.remove(temp_zip_path)
+        raise HTTPException(status_code=500, detail="Failed to create zip archive")
 
-    logger.info(f"Upload completed: {file.filename}")
-    return {"filename": file.filename, "message": "File uploaded successfully"}
+    # Schedule removal of the temp file after response is sent
+    background_tasks.add_task(os.remove, temp_zip_path)
+
+    return FileResponse(
+        temp_zip_path, media_type="application/zip", filename="download.zip"
+    )

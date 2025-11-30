@@ -215,14 +215,23 @@
 
             <div id="browseTab" class="tab-content active">
                 <h3>Available Files</h3>
+                <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                        <label for="selectAll" style="display:inline; margin-left: 0.5rem;">Select All</label>
+                    </div>
+                    <button id="downloadSelectedBtn" onclick="downloadSelected()"
+                        style="width: auto; padding: 0.5rem 1rem; background-color: #2ecc71;" disabled>Download
+                        Selected</button>
+                </div>
                 <div id="filesContainer"></div>
             </div>
 
             <div id="uploadTab" class="tab-content">
-                <h3>Upload File</h3>
+                <h3>Upload Files</h3>
                 <div class="form-group">
-                    <label for="fileInput">Select File</label>
-                    <input type="file" id="fileInput">
+                    <label for="fileInput">Select Files</label>
+                    <input type="file" id="fileInput" multiple>
                 </div>
                 <button id="uploadBtn" onclick="uploadFile()">Upload</button>
                 <div id="progressContainer" class="progress-container">
@@ -323,20 +332,22 @@
 
         async function uploadFile() {
             const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
+            const files = fileInput.files;
             const statusDiv = document.getElementById('uploadStatus');
             const uploadBtn = document.getElementById('uploadBtn');
             const progressContainer = document.getElementById('progressContainer');
             const progressBar = document.getElementById('progressBar');
 
-            if (!file) {
-                statusDiv.textContent = "Please select a file.";
+            if (files.length === 0) {
+                statusDiv.textContent = "Please select at least one file.";
                 statusDiv.style.color = "red";
                 return;
             }
 
             const formData = new FormData();
-            formData.append('file', file);
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
 
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
@@ -388,6 +399,8 @@
         function showFiles(files) {
             const container = document.getElementById('filesContainer');
             container.innerHTML = '';
+            document.getElementById('selectAll').checked = false;
+            updateDownloadButton();
 
             if (files.length === 0) {
                 container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">No files available.</p>';
@@ -402,14 +415,72 @@
                 const downloadUrl = `/download?filename=${encodeURIComponent(file.name)}&user_email=${encodeURIComponent(currentEmail)}&api_key=${encodeURIComponent(currentApiKey)}`;
 
                 div.innerHTML = `
-                    <div>
-                        <strong>${file.name}</strong><br>
-                        <small style="color:#7f8c8d">${size}</small>
+                    <div style="display:flex; align-items:center;">
+                        <input type="checkbox" class="file-checkbox" value="${file.name}" onchange="updateDownloadButton()" style="margin-right: 1rem;">
+                        <div>
+                            <strong>${file.name}</strong><br>
+                            <small style="color:#7f8c8d">${size}</small>
+                        </div>
                     </div>
                     <a href="${downloadUrl}" class="download-btn" target="_blank">Download</a>
                 `;
                 container.appendChild(div);
             });
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateDownloadButton();
+        }
+
+        function updateDownloadButton() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const btn = document.getElementById('downloadSelectedBtn');
+            btn.disabled = checkboxes.length === 0;
+            btn.textContent = checkboxes.length > 0 ? `Download Selected (${checkboxes.length})` : 'Download Selected';
+        }
+
+        async function downloadSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const filenames = Array.from(checkboxes).map(cb => cb.value);
+            const btn = document.getElementById('downloadSelectedBtn');
+
+            if (filenames.length === 0) return;
+
+            btn.disabled = true;
+            btn.textContent = 'Preparing Zip...';
+
+            try {
+                const response = await fetch('/download_zip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': currentApiKey
+                    },
+                    body: JSON.stringify({ filenames: filenames })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Download failed');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'download.zip';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (err) {
+                alert('Error downloading zip: ' + err.message);
+            } finally {
+                updateDownloadButton();
+            }
         }
 
         function formatSize(bytes) {
