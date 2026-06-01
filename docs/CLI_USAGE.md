@@ -23,13 +23,13 @@ This guide covers the command-line interface (CLI) methods for uploading and dow
 ## 2. [DOWNLOADER] Getting Data via CLI
 
 ### Interactive Download Script
-1.  **Configure `.env`** (optional):
-    Copy `.env.sample` to `.env` and fill in `PRIVATE_DOWNLOAD_API_KEY`, `PRIVATE_DOWNLOAD_IP`, etc.
-2.  **Run the Script**:
-    ```bash
-    ./download_data.sh
-    ```
-    Follow the prompts to select and download files.
+You can run the downloader script directly without cloning the repository:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/raoulg/private-data-hosting/refs/heads/main/download_data.sh | bash -s -- -o assets/
+```
+-   `-o assets/`: Specifies the output directory (optional, defaults to current dir).
+-   The script will prompt for your **Email**, **API Key**, and the **Server IP**.
 
 ### Manual Download via Curl
 You can download files directly using `curl`:

@@ -1,4 +1,3 @@
-# Makefile
 SHELL := /bin/bash
 
 # Load variables from .env if it exists
@@ -12,14 +11,12 @@ PRIVATE_TRANSFERRED_DIR ?= data/transferred
 PRIVATE_INPUT_FILENAME ?=
 
 # name of the zip file to create and transfer (e.g., my_dataset.zip)
-# if empty, you will be prompted to enter a name for the zip file
+# if empty, batch transfer mode is used
 PRIVATE_OUTPUT_ZIP ?=
 ifneq ($(PRIVATE_OUTPUT_ZIP),)
     DATA_FILE ?= data/$(PRIVATE_OUTPUT_ZIP)
 endif
-ifneq ($(PRIVATE_OUTPUT_ZIP),)
-    DATA_FILE ?= data/$(PRIVATE_OUTPUT_ZIP)
-endif
+
 REMOTE_PATH ?= ~/private-data-hosting/data/
 VM_USER ?=
 
@@ -119,7 +116,7 @@ setup-uploader: ## [Uploader] Interactive setup for local .env
 up: ## Start the server with Docker Compose
 	docker compose up --build -d
 
-transfer: ## [Uploader] Transfer data from local machine to the VM
+transfer: ## [Uploader] Transfer data (Batch all .zips if no specific file set)
 	@if [ -z "$(PRIVATE_DOWNLOAD_IP)" ]; then \
 		echo "Error: PRIVATE_DOWNLOAD_IP is not set. Please run 'make setup-uploader' or set manually in .env"; \
 		exit 1; \
@@ -133,11 +130,7 @@ transfer: ## [Uploader] Transfer data from local machine to the VM
 		exit 1; \
 	fi; \
 	if [ -n "$(DATA_FILE)" ] && [ -f "$(DATA_FILE)" ]; then \
-		read -p "Transferring $(DATA_FILE) to $$vm_user@$(PRIVATE_DOWNLOAD_IP). Continue? (y/n): " confirm; \
-		if [ "$$confirm" != "y" ]; then \
-			echo "Transfer aborted."; \
-			exit 0; \
-		fi; \
+		echo "Single File Mode: Transferring $(DATA_FILE)..."; \
 		scp $(DATA_FILE) $$vm_user@$(PRIVATE_DOWNLOAD_IP):$(REMOTE_PATH); \
 		echo "Transfer complete."; \
 		echo "Moving processed files to $(PRIVATE_TRANSFERRED_DIR)..."; \
@@ -148,17 +141,20 @@ transfer: ## [Uploader] Transfer data from local machine to the VM
 		fi; \
 		echo "Files moved to $(PRIVATE_TRANSFERRED_DIR)."; \
 	else \
-		if [ -n "$(DATA_FILE)" ]; then \
-			echo "File $(DATA_FILE) not found."; \
-		fi; \
-		read -p "Enter filename to transfer: " new_file; \
-		scp $$new_file $$vm_user@$(PRIVATE_DOWNLOAD_IP):$(REMOTE_PATH); \
-		echo "Transfer complete."; \
-		echo "Moving processed files to $(PRIVATE_TRANSFERRED_DIR)..."; \
-		if [ -n "$(PRIVATE_INPUT_FILENAME)" ]; then \
-			mv "$(PRIVATE_SEND_DIR)/$(PRIVATE_INPUT_FILENAME)" "$(PRIVATE_TRANSFERRED_DIR)/"; \
+		echo "Batch Mode: No DATA_FILE specified. Looking for .zip files in $(PRIVATE_SEND_DIR)..."; \
+		if ls $(PRIVATE_SEND_DIR)/*.zip 1> /dev/null 2>&1; then \
+			for file in $(PRIVATE_SEND_DIR)/*.zip; do \
+				echo "-----------------------------------"; \
+				echo "Found: $$file"; \
+				echo "Transferring to $$vm_user@$(PRIVATE_DOWNLOAD_IP)..."; \
+				scp "$$file" $$vm_user@$(PRIVATE_DOWNLOAD_IP):$(REMOTE_PATH); \
+				echo "Moving $$file to $(PRIVATE_TRANSFERRED_DIR)..."; \
+				mv "$$file" "$(PRIVATE_TRANSFERRED_DIR)/"; \
+			done; \
+			echo "-----------------------------------"; \
+			echo "Batch transfer complete."; \
 		else \
-			mv $(PRIVATE_SEND_DIR)/* "$(PRIVATE_TRANSFERRED_DIR)/"; \
+			echo "No .zip files found in $(PRIVATE_SEND_DIR). Nothing to transfer."; \
+			exit 1; \
 		fi; \
-		echo "Files moved to $(PRIVATE_TRANSFERRED_DIR)."; \
 	fi
