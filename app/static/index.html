@@ -93,12 +93,27 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 1rem;
             padding: 0.75rem;
             border-bottom: 1px solid #f0f0f0;
         }
 
         .file-item:last-child {
             border-bottom: none;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .file-info-text {
+            min-width: 0;
+            flex: 1;
+            overflow-wrap: anywhere;
+            word-break: break-word;
         }
 
         .download-btn {
@@ -109,6 +124,7 @@
             border-radius: 4px;
             font-size: 0.9rem;
             width: auto;
+            flex-shrink: 0;
         }
 
         .download-btn:hover {
@@ -415,9 +431,9 @@
                 const downloadUrl = `/download?filename=${encodeURIComponent(file.name)}&user_email=${encodeURIComponent(currentEmail)}&api_key=${encodeURIComponent(currentApiKey)}`;
 
                 div.innerHTML = `
-                    <div style="display:flex; align-items:center;">
-                        <input type="checkbox" class="file-checkbox" value="${file.name}" onchange="updateDownloadButton()" style="margin-right: 1rem;">
-                        <div>
+                    <div class="file-info">
+                        <input type="checkbox" class="file-checkbox" value="${file.name}" onchange="updateDownloadButton()" style="margin-right: 1rem; flex-shrink: 0;">
+                        <div class="file-info-text">
                             <strong>${file.name}</strong><br>
                             <small style="color:#7f8c8d">${size}</small>
                         </div>
