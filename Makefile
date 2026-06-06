@@ -20,7 +20,7 @@ endif
 REMOTE_PATH ?= ~/private-data-hosting/data/
 VM_USER ?=
 
-.PHONY: help setup-server setup-uploader up transfer zip
+.PHONY: help setup-server setup-uploader up down restart transfer zip
 .DEFAULT_GOAL := help
 
 help: ## Show this help message
@@ -114,6 +114,13 @@ setup-uploader: ## [Uploader] Interactive setup for local .env
 	@echo "Configuration updated."
 
 up: ## Start the server with Docker Compose
+	docker compose up --build -d
+
+down: ## Stop the server
+	docker compose down
+
+restart: ## Restart the server (rebuilds image)
+	docker compose down
 	docker compose up --build -d
 
 transfer: ## [Uploader] Transfer data (Batch all .zips if no specific file set)
